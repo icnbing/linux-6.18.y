@@ -255,7 +255,7 @@
 		    <&gmac0_rgmii_clk>, <&gmac0_rgmii_bus>;
 	tx_delay = <0x4f>;
 	rx_delay = <0x0f>;
-	/* 修复：删除 fixed-link，由 DSA 框架自动管理 */
+	/* 注意：此处绝对不能有 fixed-link，必须由 DSA 接管 */
 };
 
 &mdio0 {
@@ -269,8 +269,11 @@
 		reset-gpios = <&gpio0 RK_PA3 GPIO_ACTIVE_LOW>;
 		realtek,disable-leds;
 
+		/* 【关键修复】6.18 驱动强制要求嵌套的 interrupt-controller */
 		interrupt-parent = <&gpio0>;
 		interrupts = <RK_PA4 IRQ_TYPE_LEVEL_LOW>;
+		interrupt-controller;
+		#interrupt-cells = <1>;
 
 		ports {
 			#address-cells = <1>;
