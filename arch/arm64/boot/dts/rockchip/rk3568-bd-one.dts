@@ -418,7 +418,6 @@
 &sata1 { status = "okay"; };
 &pcie30phy { status = "okay"; };
 &pcie3x2 { status = "okay"; vpcie3v3-supply = <&vcc3v3_pcie>; };
-&crypto { status = "okay"; };
 
 &usb2phy0 {
 	status = "okay";
