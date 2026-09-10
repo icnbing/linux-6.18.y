@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: (GPL-2.0+ OR MIT)
-
 /dts-v1/;
 
 #include <dt-bindings/gpio/gpio.h>
@@ -29,9 +28,9 @@
 	cpu0_opp_table: opp-table-0 {
 		compatible = "operating-points-v2";
 		opp-shared;
-		opp-408000000  { opp-hz = /bits/ 64 <408000000>;  opp-microvolt = <825000>; };
-		opp-600000000  { opp-hz = /bits/ 64 <600000000>;  opp-microvolt = <825000>; };
-		opp-816000000  { opp-hz = /bits/ 64 <816000000>;  opp-microvolt = <825000>; };
+		opp-408000000 { opp-hz = /bits/ 64 <408000000>; opp-microvolt = <825000>; };
+		opp-600000000 { opp-hz = /bits/ 64 <600000000>; opp-microvolt = <825000>; };
+		opp-816000000 { opp-hz = /bits/ 64 <816000000>; opp-microvolt = <825000>; };
 		opp-1104000000 { opp-hz = /bits/ 64 <1104000000>; opp-microvolt = <825000>; };
 		opp-1416000000 { opp-hz = /bits/ 64 <1416000000>; opp-microvolt = <900000>; };
 		opp-1608000000 { opp-hz = /bits/ 64 <1608000000>; opp-microvolt = <1000000>; };
@@ -72,11 +71,13 @@
 		compatible = "gpio-leds";
 		pinctrl-names = "default";
 		pinctrl-0 = <&led_pins>;
+
 		led_power: led-0 {
 			label = "red:power";
 			gpios = <&gpio4 RK_PB3 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
+
 		led_status: led-1 {
 			label = "green:status";
 			gpios = <&gpio4 RK_PB1 GPIO_ACTIVE_LOW>;
@@ -96,16 +97,21 @@
 		vin-supply = <&vcc3v3_sys>;
 	};
 
+	/* 修复点1：补充 regulator-name，解决 6.18 内核 reg-fixed-voltage probe 失败导致的全局电源树崩溃 */
 	dc_12v: dc-12v {
 		compatible = "regulator-fixed";
+		regulator-name = "dc_12v";
 		regulator-always-on;
+		regulator-boot-on;
 		regulator-min-microvolt = <12000000>;
 		regulator-max-microvolt = <12000000>;
 	};
 
 	vcc3v3_sys: vcc3v3-sys {
 		compatible = "regulator-fixed";
+		regulator-name = "vcc3v3_sys";
 		regulator-always-on;
+		regulator-boot-on;
 		vin-supply = <&dc_12v>;
 		regulator-min-microvolt = <3300000>;
 		regulator-max-microvolt = <3300000>;
@@ -144,29 +150,39 @@
 
 &combphy0 { status = "okay"; };
 &combphy2 { status = "okay"; };
+
 &sata0 { status = "okay"; };
 &sata2 { status = "okay"; };
 
+/* 修复点2：修正 MDIO 和 Switch 配置，适配 6.18 网络驱动对 PHY 节点的严格校验 */
 &mdio0 {
 	#address-cells = <1>;
 	#size-cells = <0>;
+
 	rtl8367s: switch@1d {
 		compatible = "realtek,rtl8365mb";
 		reg = <0x1d>;
 		reset-gpios = <&gpio1 RK_PA3 GPIO_ACTIVE_LOW>;
+		realtek,disable-leds;
+
 		ports {
 			#address-cells = <1>;
 			#size-cells = <0>;
+
 			port@0 { reg = <0>; label = "lan4"; };
 			port@1 { reg = <1>; label = "lan3"; };
 			port@2 { reg = <2>; label = "lan2"; };
 			port@3 { reg = <3>; label = "lan1"; };
+
 			port@7 {
 				reg = <7>;
 				label = "cpu";
 				ethernet = <&gmac0>;
 				phy-mode = "rgmii";
-				fixed-link { speed = <1000>; full-duplex; };
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
 			};
 		};
 	};
@@ -175,6 +191,7 @@
 &gmac0 {
 	status = "okay";
 	phy-mode = "rgmii";
+	clock_in_out = "output";
 	tx_delay = <0x4f>;
 	rx_delay = <0x0f>;
 	pinctrl-names = "default";
@@ -184,9 +201,13 @@
 &gmac1 {
 	status = "okay";
 	phy-mode = "rgmii";
+	clock_in_out = "output";
 	snps,reset-gpio = <&gpio0 RK_PC5 GPIO_ACTIVE_LOW>;
+	snps,reset-active-low;
+	snps,reset-delays-us = <0 20000 100000>;
 	tx_delay = <0x4f>;
 	rx_delay = <0x26>;
+	pinctrl-names = "default";
 	pinctrl-0 = <&gmac1m1_miim &gmac1m1_tx_bus2 &gmac1m1_rx_bus2 &gmac1m1_rgmii_clk &gmac1m1_rgmii_bus>;
 	phy-handle = <&rgmii_phy1>;
 };
@@ -259,9 +280,7 @@
 				regulator-max-microvolt = <1350000>;
 				regulator-ramp-delay = <6001>;
 				regulator-initial-mode = <0x2>;
-				regulator-state-mem {
-					regulator-off-in-suspend;
-				};
+				regulator-state-mem { regulator-off-in-suspend; };
 			};
 
 			/* DCDC_REG2: GPU */
@@ -273,9 +292,7 @@
 				regulator-max-microvolt = <1350000>;
 				regulator-ramp-delay = <6001>;
 				regulator-initial-mode = <0x2>;
-				regulator-state-mem {
-					regulator-off-in-suspend;
-				};
+				regulator-state-mem { regulator-off-in-suspend; };
 			};
 
 			/* DCDC_REG3: DDR */
@@ -284,9 +301,7 @@
 				regulator-always-on;
 				regulator-boot-on;
 				regulator-initial-mode = <0x2>;
-				regulator-state-mem {
-					regulator-on-in-suspend;
-				};
+				regulator-state-mem { regulator-on-in-suspend; };
 			};
 
 			/* DCDC_REG4: NPU */
@@ -295,9 +310,7 @@
 				regulator-min-microvolt = <500000>;
 				regulator-max-microvolt = <1350000>;
 				regulator-initial-mode = <0x2>;
-				regulator-state-mem {
-					regulator-off-in-suspend;
-				};
+				regulator-state-mem { regulator-off-in-suspend; };
 			};
 
 			/* DCDC_REG5: 1.8V IO */
@@ -357,20 +370,24 @@
 &pinctrl {
 	leds {
 		led_pins: led-pins {
-			rockchip,pins = <4 RK_PB3 RK_FUNC_GPIO &pcfg_pull_none>,
-			                <4 RK_PB1 RK_FUNC_GPIO &pcfg_pull_none>;
+			rockchip,pins =
+				<4 RK_PB3 RK_FUNC_GPIO &pcfg_pull_none>,
+				<4 RK_PB1 RK_FUNC_GPIO &pcfg_pull_none>;
 		};
 	};
+
 	fan {
 		fan_pins: fan-pins {
 			rockchip,pins = <4 RK_PA7 RK_FUNC_GPIO &pcfg_pull_none>;
 		};
 	};
+
 	pcie {
 		pcie30_pwr_pin: pcie30-pwr-pin {
 			rockchip,pins = <0 RK_PC0 RK_FUNC_GPIO &pcfg_pull_none>;
 		};
 	};
+
 	pmic {
 		pmic_int: pmic-int {
 			rockchip,pins = <0 RK_PA3 RK_FUNC_GPIO &pcfg_pull_up>;
@@ -397,6 +414,7 @@
 			type = "active";
 		};
 	};
+
 	cooling-maps {
 		map1 {
 			trip = <&cpu_active>;
