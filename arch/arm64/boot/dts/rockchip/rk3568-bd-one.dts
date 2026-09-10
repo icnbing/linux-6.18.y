@@ -259,18 +259,18 @@
 };
 
 &mdio0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
 	switch@1d {
 		compatible = "realtek,rtl8365mb";
 		reg = <0x1d>;
 		reset-gpios = <&gpio0 RK_PA3 GPIO_ACTIVE_LOW>;
+		realtek,disable-leds;
 
-		switch_intc: interrupt-controller {
-			interrupt-parent = <&gpio0>;
-			interrupts = <RK_PA4 IRQ_TYPE_LEVEL_LOW>;
-			interrupt-controller;
-			#address-cells = <0>;
-			#interrupt-cells = <1>;
-		};
+		interrupt-parent = <&gpio0>;
+		interrupts = <RK_PA4 IRQ_TYPE_LEVEL_LOW>;
 
 		ports {
 			#address-cells = <1>;
@@ -315,6 +315,10 @@
 };
 
 &mdio1 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
 	phy0: ethernet-phy@0 {
 		compatible = "ethernet-phy-ieee802.3-c22";
 		reg = <0x0>;
@@ -418,6 +422,7 @@
 &sata1 { status = "okay"; };
 &pcie30phy { status = "okay"; };
 &pcie3x2 { status = "okay"; vpcie3v3-supply = <&vcc3v3_pcie>; };
+//&crypto { status = "okay"; };
 
 &usb2phy0 {
 	status = "okay";
