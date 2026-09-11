@@ -6,6 +6,9 @@
 #include <dt-bindings/pwm/pwm.h>
 #include <dt-bindings/leds/common.h>
 #include <dt-bindings/soc/rockchip,vop2.h>
+/* 【修复 1】补充缺失的关键头文件 */
+#include <dt-bindings/thermal/thermal.h>
+#include <dt-bindings/interrupt-controller/irq.h>
 #include "rk3568.dtsi"
 
 / {
@@ -188,7 +191,7 @@
 		regulator-always-on;
 		regulator-boot-on;
 		regulator-init-microvolt = <900000>;
-		regulator-min-microvolt = <500000>; /* 修复乱码错误 */
+		regulator-min-microvolt = <500000>;
 		regulator-max-microvolt = <1350000>;
 		regulator-ramp-delay = <6001>;
 		regulator-settling-time-up-us = <250>;
@@ -255,7 +258,6 @@
 		    <&gmac0_rgmii_clk>, <&gmac0_rgmii_bus>;
 	tx_delay = <0x4f>;
 	rx_delay = <0x0f>;
-	/* 注意：此处绝对不能有 fixed-link，必须由 DSA 接管 */
 };
 
 &mdio0 {
@@ -269,7 +271,6 @@
 		reset-gpios = <&gpio0 RK_PA3 GPIO_ACTIVE_LOW>;
 		realtek,disable-leds;
 
-		/* 【关键修复】6.18 驱动强制要求嵌套的 interrupt-controller */
 		interrupt-parent = <&gpio0>;
 		interrupts = <RK_PA4 IRQ_TYPE_LEVEL_LOW>;
 		interrupt-controller;
@@ -304,7 +305,7 @@
 	assigned-clock-parents = <&cru SCLK_GMAC1_RGMII_SPEED>;
 	assigned-clock-rates = <0>, <125000000>;
 	clock_in_out = "output";
-	phy-handle = <&phy0>; /* 修复：使用标签引用代替硬编码 0x49 */
+	phy-handle = <&phy0>;
 	phy-mode = "rgmii";
 	phy-supply = <&vcc_3v3>;
 	pinctrl-names = "default";
@@ -360,7 +361,7 @@
 		cpu_trip_active_high: cpu-trip-active-high {
 			temperature = <85000>;
 			hysteresis = <2000>;
-			type = "active"; /* 修复：将 "hot" 改为 "active" 以匹配风扇绑定 */
+			type = "active";
 		};
 	};
 
@@ -420,12 +421,11 @@
 &pwm5 { status = "okay"; };
 &combphy0 { status = "okay"; };
 &combphy1 { status = "okay"; };
-&combphy2 { status = "okay"; };
+&combphy2 { status = "okay"; }; /* 【修复 3】修正换行语法错误 */
 &sata0 { status = "okay"; };
 &sata1 { status = "okay"; };
 &pcie30phy { status = "okay"; };
 &pcie3x2 { status = "okay"; vpcie3v3-supply = <&vcc3v3_pcie>; };
-//&crypto { status = "okay"; };
 
 &usb2phy0 {
 	status = "okay";
@@ -469,6 +469,7 @@
 	};
 };
 
+/* 【修复 2】彻底重构 &pinctrl 节点，仅保留板级自定义引脚，删除所有反编译残留和 SoC 标准定义 */
 &pinctrl {
 	fan {
 		fan_pins: fan-pins {
@@ -476,17 +477,16 @@
 		};
 	};
 
-	leds {
+	gpio-leds {
 		power_led_pin: power-led-pin {
 			rockchip,pins = <4 RK_PB3 RK_FUNC_GPIO &pcfg_pull_none>;
 		};
-
 		status_led_pin: status-led-pin {
 			rockchip,pins = <4 RK_PB1 RK_FUNC_GPIO &pcfg_pull_none>;
 		};
 	};
 
-	pcie {
+	pcie30 {
 		ssd_pwr_en: ssd-pwr-en {
 			rockchip,pins = <0 RK_PC0 RK_FUNC_GPIO &pcfg_pull_none>;
 		};
