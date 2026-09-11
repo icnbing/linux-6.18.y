@@ -271,11 +271,6 @@
 		reset-gpios = <&gpio0 RK_PA3 GPIO_ACTIVE_LOW>;
 		realtek,disable-leds;
 
-		interrupt-parent = <&gpio0>;
-		interrupts = <RK_PA4 IRQ_TYPE_LEVEL_LOW>;
-		interrupt-controller;
-		#interrupt-cells = <1>;
-
 		ports {
 			#address-cells = <1>;
 			#size-cells = <0>;
