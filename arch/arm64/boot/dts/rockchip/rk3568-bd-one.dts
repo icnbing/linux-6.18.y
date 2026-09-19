@@ -19,7 +19,16 @@
  *   1. WAN 指示灯不工作；
  *   2. HDMI 不工作；
  * 其他基本OK。
- * --cnb@srv.wang ----------2026.09.19
+ *
+ * V0.2 fixes (based on K6.18V0.1.log):
+ *   - RTL8365MB switch: 6.18 内核要求 switch 下显式声明 mdio 子节点及
+ *     每个端口的 phy-handle（旧的隐式 1:1 映射报 "no MDIO bus node"）。
+ *     同时移除 gmac0 上的 fixed-link（由 DSA CPU port 管理）和
+ *     switch_intc 子中断控制器（上游认为这种描述方式错误）。
+ *   - GPU panfrost: 添加 opp-available-hw = <0xfb 0xffff> 以匹配
+ *     gpu_opp_table 中 OPP 条目的 opp-supported-hw，修复
+ *     "no supported OPPs" → "Fatal error during GPU init"。
+ * --cnb@srv.wang ----------2026.09.20
  */
 
 /dts-v1/;
@@ -304,6 +313,12 @@
 
 &gpu {
 	mali-supply = <&vdd_gpu>;
+	/*
+	 * 6.18 的 gpu_opp_table 每个 OPP 条目带 opp-supported-hw = <0xfb 0xffff>，
+	 * 必须在设备节点声明 opp-available-hw 才能匹配，否则 panfrost 报
+	 * "no supported OPPs" 并 probe 失败 (-2)。
+	 */
+	opp-available-hw = <0xfb 0xffff>;
 	status = "okay";
 };
 
@@ -458,11 +473,6 @@
 	tx_delay = <0x4f>;
 	rx_delay = <0x0f>;
 	status = "okay";
-
-	fixed-link {
-		speed = <1000>;
-		full-duplex;
-	};
 };
 
 &mdio0 {
@@ -475,13 +485,28 @@
 		compatible = "realtek,rtl8365mb";
 		reg = <0x1d>;
 		reset-gpios = <&gpio0 RK_PA3 GPIO_ACTIVE_LOW>;
+		reset-delays-us = <0 10000 50000>;
 
-		switch_intc: interrupt-controller {
-			interrupt-controller;
-			#address-cells = <0>;
-			#interrupt-cells = <1>;
-			interrupt-parent = <&gpio0>;
-			interrupts = <RK_PA4 IRQ_TYPE_LEVEL_LOW>;
+		/*
+		 * 6.18 内核要求 switch 节点下显式声明内部 MDIO 总线
+		 * 及每个端口的 PHY，旧的隐式 1:1 映射已废弃。
+		 */
+		mdio {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			switch_phy0: ethernet-phy@0 {
+				reg = <0>;
+			};
+			switch_phy1: ethernet-phy@1 {
+				reg = <1>;
+			};
+			switch_phy2: ethernet-phy@2 {
+				reg = <2>;
+			};
+			switch_phy3: ethernet-phy@3 {
+				reg = <3>;
+			};
 		};
 
 		ports {
@@ -491,21 +516,25 @@
 			port@0 {
 				reg = <0>;
 				label = "lan4";
+				phy-handle = <&switch_phy0>;
 			};
 
 			port@1 {
 				reg = <1>;
 				label = "lan3";
+				phy-handle = <&switch_phy1>;
 			};
 
 			port@2 {
 				reg = <2>;
 				label = "lan2";
+				phy-handle = <&switch_phy2>;
 			};
 
 			port@3 {
 				reg = <3>;
 				label = "lan1";
+				phy-handle = <&switch_phy3>;
 			};
 
 			port@7 {
