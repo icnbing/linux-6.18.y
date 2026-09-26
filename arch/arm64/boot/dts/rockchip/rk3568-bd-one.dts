@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 /*
  * Ported to Linux 6.18 kernel.
- * rk3568-bd-one.k6.18v1.0-2026.09.22-cnb@srv.wang
+ * rk3568-bd-one.k6.18v1.1-2026.09.26-cnb@srv.wang
  *
  * arch/arm64/boot/dts/rockchip/Makefile
  *   dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3568-bd-one.dtb
  *
  *  GPU、SATA1、SATA2、USB、NVME、GMAC0、GMAC1、FAN、LED、温度传感器等功能已测试正常。
- *  HDMI未知
+ *  vpu 禁用，HDMI未知
  */
 
 /dts-v1/;
@@ -835,6 +835,13 @@ index a4020160f1..8d757c6dee 100644
 &uart2 {
 	status = "okay";
 };
+
+/* ====================================================================== */
+/*  VPU —fix:power domain sync_state() pending due to fdea0000.video-codec*/
+/* ====================================================================== */
+&vpu { status = "disabled"; };
+&vdec { status = "disabled"; };
+&vepu { status = "disabled"; };
 
 /* ====================================================================== */
 /*  Pinctrl additions                                                     */
