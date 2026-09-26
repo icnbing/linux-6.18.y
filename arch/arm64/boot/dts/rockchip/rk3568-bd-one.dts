@@ -7,7 +7,7 @@
  *   dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3568-bd-one.dtb
  *
  *  GPU、SATA1、SATA2、USB、NVME、GMAC0、GMAC1、FAN、LED、温度传感器等功能已测试正常。
- *  vpu 禁用，HDMI未知
+ *  vpu 禁用，HDMI未知 
  */
 
 /dts-v1/;
@@ -360,12 +360,21 @@
 /* ====================================================================== */
 /* (fc000000) */
 &sata0 {
-	status = "okay";
+    status = "okay";
+    ahci-supply = <&vcc_3v3>;
+    phy-supply = <&vcc_1v8>;
 };
+
 /* (fc400000) */
 &sata1 {
-	status = "okay";
+    status = "okay";
+    ahci-supply = <&vcc_3v3>;
+    phy-supply = <&vcc_1v8>;
 };
+
+// FIX:
+// supply ahci not found, using dummy regulator
+// supply phy not found, using dummy regulator
 
 /* ====================================================================== */
 /*  USB                                                                   */
